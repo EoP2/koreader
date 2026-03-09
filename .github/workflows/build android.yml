@@ -25,9 +25,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             autoconf automake build-essential ca-certificates cmake \
-            gcc-multilib gettext git libtool libtool-bin meson nasm \
+            gcc-multilib gettext git libtool libtool-bin nasm \
             ninja-build patch perl pkg-config unzip wget \
             openjdk-17-jdk-headless p7zip-full
+          # 通过 pip 安装满足版本要求的 meson (>= 1.2.0)
+          pip install meson --break-system-packages
+          meson --version
 
       - name: 设置 Java 17
         uses: actions/setup-java@v4
