@@ -1,7 +1,7 @@
 name: Build KOReader Android
 
 on:
-  workflow_dispatch:  # 仅手动触发
+  workflow_dispatch:
 
 jobs:
   build-android:
@@ -20,7 +20,7 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      - name: 安装依赖
+      - name: 安装系统依赖
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -35,20 +35,25 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: 缓存 Android NDK/SDK
-        uses: actions/cache@v4
-        with:
-          path: base/toolchain
-          key: android-toolchain-${{ runner.os }}-${{ hashFiles('base/Makefile.defs') }}
-          restore-keys: |
-            android-toolchain-${{ runner.os }}-
+      - name: 设置 Android 环境
+        uses: android-actions/setup-android@v3
 
-      - name: 缓存构建产物
+      - name: 安装 NDK r23c 及 Android SDK 组件
+        run: |
+          sdkmanager "ndk;23.2.8568313" "platforms;android-28" "build-tools;28.0.3"
+          echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/23.2.8568313" >> $GITHUB_ENV
+          echo "ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/23.2.8568313" >> $GITHUB_ENV
+          echo "$ANDROID_SDK_ROOT/ndk/23.2.8568313/toolchains/llvm/prebuilt/linux-x86_64/bin" >> $GITHUB_PATH
+
+      - name: 验证工具链
+        run: |
+          aarch64-linux-android21-clang --version
+          armv7a-linux-androideabi21-clang --version
+
+      - name: 缓存 ccache
         uses: actions/cache@v4
         with:
-          path: |
-            ~/.ccache
-            base/.ccache
+          path: ~/.ccache
           key: ccache-${{ matrix.target }}-${{ github.sha }}
           restore-keys: |
             ccache-${{ matrix.target }}-
@@ -57,11 +62,7 @@ jobs:
         run: ./kodev fetch-thirdparty
 
       - name: 构建 ${{ matrix.target }}
-        env:
-          ANDROID_NDK_HOME: ${{ github.workspace }}/base/toolchain/android-ndk
-          ANDROID_HOME: ${{ github.workspace }}/base/toolchain/android-sdk
-        run: |
-          ./kodev release ${{ matrix.target }}
+        run: ./kodev release ${{ matrix.target }}
 
       - name: 上传构建产物
         uses: actions/upload-artifact@v4
