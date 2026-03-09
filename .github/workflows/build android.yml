@@ -28,14 +28,6 @@ jobs:
           git checkout origin/master  # 或你的分支名
           cd ../../..
 
-      - name: 验证子模块
-        run: |
-          cd platform/android/luajit-launcher
-          git log --oneline -3
-          grep -n "windowFullscreen\|IMMERSIVE\|HIDE_NAVIGATION" \
-            app/src/main/res/values/styles.xml \
-            app/src/main/java/org/koreader/launcher/MainActivity.kt
-
       - name: 安装系统依赖
         run: |
           sudo apt-get update
