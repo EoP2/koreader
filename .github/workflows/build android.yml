@@ -1,0 +1,74 @@
+name: Build KOReader Android
+
+on:
+  workflow_dispatch:  # 仅手动触发
+
+jobs:
+  build-android:
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        target: [android-arm, android-arm64]
+      fail-fast: false
+
+    name: Build ${{ matrix.target }}
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: 安装依赖
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            autoconf automake build-essential ca-certificates cmake \
+            gcc-multilib gettext git libtool libtool-bin meson nasm \
+            ninja-build patch perl pkg-config unzip wget \
+            openjdk-17-jdk-headless p7zip-full
+
+      - name: 设置 Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: 缓存 Android NDK/SDK
+        uses: actions/cache@v4
+        with:
+          path: base/toolchain
+          key: android-toolchain-${{ runner.os }}-${{ hashFiles('base/Makefile.defs') }}
+          restore-keys: |
+            android-toolchain-${{ runner.os }}-
+
+      - name: 缓存构建产物
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.ccache
+            base/.ccache
+          key: ccache-${{ matrix.target }}-${{ github.sha }}
+          restore-keys: |
+            ccache-${{ matrix.target }}-
+
+      - name: 拉取第三方依赖
+        run: ./kodev fetch-thirdparty
+
+      - name: 构建 ${{ matrix.target }}
+        env:
+          ANDROID_NDK_HOME: ${{ github.workspace }}/base/toolchain/android-ndk
+          ANDROID_HOME: ${{ github.workspace }}/base/toolchain/android-sdk
+        run: |
+          ./kodev release ${{ matrix.target }}
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: koreader-${{ matrix.target }}-${{ github.run_number }}
+          path: |
+            *.apk
+            koreader-android-*.zip
+          if-no-files-found: warn
+          retention-days: 30
