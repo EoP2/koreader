@@ -20,6 +20,14 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
+      - name: 更新子模块到最新
+        run: |
+          cd platform/android/luajit-launcher
+          git remote set-url origin https://github.com/EoP2/android-luajit-launcher
+          git fetch origin
+          git checkout origin/master  # 或你的分支名
+          cd ../../..
+
       - name: 安装系统依赖
         run: |
           sudo apt-get update
