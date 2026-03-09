@@ -27,9 +27,10 @@ jobs:
             autoconf automake build-essential ca-certificates cmake \
             gcc-multilib gettext git libtool libtool-bin nasm \
             ninja-build patch perl pkg-config unzip wget \
-            openjdk-17-jdk-headless p7zip-full
-          # 通过 pip 安装满足版本要求的 meson (>= 1.2.0)
-          pip install meson --break-system-packages
+            openjdk-17-jdk-headless p7zip-full python3-pip
+          # 升级 pip 后安装 meson
+          python3 -m pip install --upgrade pip
+          python3 -m pip install meson
           meson --version
 
       - name: 设置 Java 17
